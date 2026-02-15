@@ -5,50 +5,59 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>AR Workout (MindAR Video)</title>
 
-    <!-- A-Frame + MindAR (Image Tracking) -->
+    <!-- A-Frame -->
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+    <!-- MindAR for A-Frame (Image Tracking) -->
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
 
     <style>
-      html, body { margin: 0; height: 100%; overflow: hidden; }
+      html, body { margin: 0; height: 100%; overflow: hidden; background: #000; }
       #tapToStart {
         position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
-        background: rgba(0,0,0,0.65); color: #fff; font-family: system-ui, -apple-system, sans-serif;
+        background: rgba(0,0,0,0.70); color: #fff; font-family: system-ui, -apple-system, sans-serif;
         z-index: 9999; text-align: center; padding: 24px;
       }
       #tapToStart button {
         font-size: 18px; padding: 12px 18px; border-radius: 12px; border: 0;
       }
+      #status {
+        position: fixed; left: 12px; top: 12px; z-index: 9999;
+        background: rgba(0,0,0,0.55); color: #fff; padding: 8px 10px; border-radius: 10px;
+        font-family: system-ui, -apple-system, sans-serif; font-size: 14px;
+      }
       #hint {
         position: fixed; left: 12px; bottom: 12px; z-index: 9999;
-        background: rgba(0,0,0,0.5); color: #fff; padding: 8px 10px; border-radius: 10px;
+        background: rgba(0,0,0,0.55); color: #fff; padding: 8px 10px; border-radius: 10px;
         font-family: system-ui, -apple-system, sans-serif; font-size: 14px;
       }
     </style>
   </head>
 
   <body>
-    <!-- iPhone/Safari often requires a user tap before video can play -->
     <div id="tapToStart">
       <div>
         <div style="font-size:20px; margin-bottom:12px;">AR Workout</div>
-        <div style="opacity:0.9; margin-bottom:16px;">Tap start, allow camera, then point at the workout card.</div>
+        <div style="opacity:0.9; margin-bottom:16px;">
+          Tap Start, allow camera, then point at the workout card.
+        </div>
         <button id="startBtn">Start</button>
       </div>
     </div>
+
+    <div id="status">Status: waiting to start</div>
     <div id="hint">Tip: Keep the card well-lit and steady.</div>
 
     <a-scene
-      mindar-image="imageTargetSrc: targets.mind; autoStart: false;"
+      embedded
       vr-mode-ui="enabled: false"
       device-orientation-permission-ui="enabled: false"
-      renderer="colorManagement: true; physicallyCorrectLights: true;"
+      renderer="colorManagement: true;"
+      mindar-image="imageTargetSrc: ./targets.mind; autoStart: false;"
     >
       <a-assets>
-        <!-- playsinline + muted helps mobile autoplay after user gesture -->
         <video
           id="workoutVideo"
-          src="video.mp4"
+          src="./video.mp4"
           preload="auto"
           loop
           muted
@@ -58,12 +67,11 @@
         ></video>
       </a-assets>
 
-      <!-- Camera -->
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-      <!-- Target 0: show video on top of the image -->
+      <!-- Target Index 0 -->
       <a-entity mindar-image-target="targetIndex: 0" id="target0">
-        <!-- a-video uses the <video> as a texture -->
+        <!-- Adjust width/height to match your video aspect ratio -->
         <a-video
           id="videoPlane"
           src="#workoutVideo"
@@ -78,28 +86,60 @@
     <script>
       const startBtn = document.getElementById("startBtn");
       const tapToStart = document.getElementById("tapToStart");
+      const statusEl = document.getElementById("status");
 
       const sceneEl = document.querySelector("a-scene");
       const videoEl = document.getElementById("workoutVideo");
       const targetEl = document.getElementById("target0");
 
-      // Play/pause video ONLY when target is found/lost
+      function setStatus(msg) { statusEl.textContent = "Status: " + msg; }
+
+      // When target is found/lost, play/pause video
       targetEl.addEventListener("targetFound", async () => {
-        try { await videoEl.play(); } catch (e) { /* ignore */ }
+        setStatus("target found ✅ playing video");
+        try { await videoEl.play(); } catch (e) { setStatus("target found but video blocked (iOS)"); }
       });
+
       targetEl.addEventListener("targetLost", () => {
+        setStatus("target lost ❌");
         videoEl.pause();
-        videoEl.currentTime = 0; // optional: restart when found again
+        videoEl.currentTime = 0;
       });
 
-      startBtn.addEventListener("click", async () => {
-        // 1) Start MindAR camera tracking
-        sceneEl.components["mindar-image"].start();
+      // Start MindAR safely AFTER the scene is loaded
+      async function startAR() {
+        setStatus("starting camera…");
 
-        // 2) Try to “unlock” video playback on iOS with this user gesture
+        // iOS: unlock video with user gesture
         try { await videoEl.play(); videoEl.pause(); videoEl.currentTime = 0; } catch (e) {}
 
+        // Ensure A-Frame scene is ready
+        if (!sceneEl.hasLoaded) {
+          await new Promise(resolve => sceneEl.addEventListener("loaded", resolve, { once: true }));
+        }
+
+        try {
+          // Preferred way (MindAR system)
+          const system = sceneEl.systems["mindar-image-system"];
+          if (system && system.start) {
+            await system.start();
+            setStatus("camera started ✅ now scan the card");
+          } else if (sceneEl.components["mindar-image"] && sceneEl.components["mindar-image"].start) {
+            // Fallback way
+            await sceneEl.components["mindar-image"].start();
+            setStatus("camera started ✅ now scan the card");
+          } else {
+            setStatus("MindAR not found. Check script import.");
+          }
+        } catch (err) {
+          console.error(err);
+          setStatus("failed to start camera. Check permissions / HTTPS.");
+        }
+      }
+
+      startBtn.addEventListener("click", async () => {
         tapToStart.style.display = "none";
+        await startAR();
       });
     </script>
   </body>
