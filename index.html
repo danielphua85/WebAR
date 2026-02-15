@@ -2,219 +2,143 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <!-- viewport-fit=cover helps iPhone fill the full screen -->
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>MindAR Video (iPhone Fix)</title>
+  <title>MindAR Video (Debug)</title>
 
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
 
   <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      overflow: hidden;
-      background: #000;
-      height: 100%;
-      width: 100%;
-      position: fixed;
-      inset: 0;
-    }
-
-    /* We’ll set exact height in JS too */
-    #app {
-      position: fixed;
-      inset: 0;
-      width: 100vw;
-      height: 100vh;
-      background: #000;
-    }
-
-    a-scene {
-      position: fixed !important;
-      inset: 0 !important;
-      width: 100vw !important;
-      height: 100vh !important;
-      z-index: 1;
-    }
-
-    /* Force canvas fullscreen */
-    canvas.a-canvas {
-      position: fixed !important;
-      inset: 0 !important;
-      width: 100vw !important;
-      height: 100vh !important;
-      display: block !important;
-    }
+    html, body { margin:0; padding:0; width:100%; height:100%; overflow:hidden; background:#000; }
+    #app { position:fixed; inset:0; width:100vw; height:100vh; background:#000; }
+    a-scene, canvas.a-canvas { position:fixed !important; inset:0 !important; width:100vw !important; height:100vh !important; }
 
     #tapToStart {
-      position: fixed;
-      inset: 0;
-      z-index: 9999;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: rgba(0,0,0,0.72);
-      color: #fff;
-      font-family: system-ui, -apple-system, sans-serif;
-      text-align: center;
-      padding: 24px;
+      position:fixed; inset:0; z-index:9999;
+      display:flex; align-items:center; justify-content:center;
+      background:rgba(0,0,0,0.72); color:#fff;
+      font-family:system-ui,-apple-system,sans-serif; text-align:center; padding:24px;
     }
-    #tapToStart button {
-      font-size: 18px;
-      padding: 12px 18px;
-      border-radius: 12px;
-      border: 0;
-    }
+    #tapToStart button { font-size:18px; padding:12px 18px; border-radius:12px; border:0; }
 
-    #status, #hint {
-      position: fixed;
-      z-index: 9999;
-      background: rgba(0,0,0,0.55);
-      color: #fff;
-      padding: 8px 10px;
-      border-radius: 10px;
-      font-family: system-ui, -apple-system, sans-serif;
-      font-size: 14px;
+    #status {
+      position:fixed; left:12px; top:12px; z-index:9999;
+      background:rgba(0,0,0,0.55); color:#fff; padding:8px 10px; border-radius:10px;
+      font-family:system-ui,-apple-system,sans-serif; font-size:14px;
     }
-    #status { left: 12px; top: 12px; }
-    #hint { left: 12px; bottom: 12px; }
   </style>
 </head>
 
 <body>
-  <div id="app">
-    <div id="tapToStart">
-      <div>
-        <div style="font-size:20px; margin-bottom:10px;">AR Workout</div>
-        <div style="opacity:0.9; margin-bottom:16px;">Tap Start → Allow Camera → Point at your target image.</div>
-        <button id="startBtn">Start</button>
-      </div>
+<div id="app">
+  <div id="tapToStart">
+    <div>
+      <div style="font-size:20px; margin-bottom:10px;">AR Workout (Debug)</div>
+      <div style="opacity:0.9; margin-bottom:16px;">Tap Start → Allow Camera → Scan target.</div>
+      <button id="startBtn">Start</button>
     </div>
-
-    <div id="status">Status: waiting</div>
-    <div id="hint">Tip: Bright light + hold steady.</div>
-
-    <a-scene
-      vr-mode-ui="enabled: false"
-      device-orientation-permission-ui="enabled: false"
-      renderer="colorManagement: true; antialias: true; alpha: true;"
-      mindar-image="imageTargetSrc: ./targets.mind; autoStart: false; uiScanning: yes; uiLoading: yes; uiError: yes;"
-    >
-      <a-assets timeout="60000">
-        <!-- iOS: playsinline + muted is important -->
-        <video
-          id="workoutVideo"
-          src="./video.mp4"
-          preload="auto"
-          loop
-          muted
-          playsinline
-          webkit-playsinline
-          crossorigin="anonymous"
-        ></video>
-      </a-assets>
-
-      <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
-
-      <!-- Target 0 -->
-      <a-entity mindar-image-target="targetIndex: 0" id="target0">
-        <a-video
-          id="videoPlane"
-          src="#workoutVideo"
-          position="0 0 0"
-          rotation="0 0 0"
-          width="1.2"
-          height="0.675"
-        ></a-video>
-      </a-entity>
-    </a-scene>
   </div>
 
-  <script>
-    const startBtn = document.getElementById("startBtn");
-    const tapToStart = document.getElementById("tapToStart");
-    const statusEl = document.getElementById("status");
-    const appEl = document.getElementById("app");
+  <div id="status">Status: waiting</div>
 
-    const sceneEl = document.querySelector("a-scene");
-    const videoEl = document.getElementById("workoutVideo");
-    const targetEl = document.getElementById("target0");
+  <a-scene
+    vr-mode-ui="enabled:false"
+    device-orientation-permission-ui="enabled:false"
+    renderer="colorManagement:true; antialias:true; alpha:true;"
+    mindar-image="imageTargetSrc: ./targets.mind; autoStart:false; uiScanning: yes; uiLoading: yes; uiError: yes;"
+  >
+    <a-assets timeout="60000">
+      <video id="workoutVideo"
+        src="./video.mp4"
+        preload="auto"
+        loop
+        muted
+        playsinline
+        webkit-playsinline
+        crossorigin="anonymous"></video>
+    </a-assets>
 
-    const setStatus = (msg) => statusEl.textContent = "Status: " + msg;
+    <a-camera position="0 0 0" look-controls="enabled:false"></a-camera>
 
-    // iPhone Safari: 100vh can be wrong due to address bar.
-    // This forces real pixel height.
-    function fixIOSHeight() {
-      const h = window.innerHeight;
-      appEl.style.height = h + "px";
-      appEl.style.width = window.innerWidth + "px";
+    <a-entity mindar-image-target="targetIndex: 0" id="target0">
+      <a-video
+        src="#workoutVideo"
+        position="0 0 0"
+        width="1.2"
+        height="0.675"></a-video>
+    </a-entity>
+  </a-scene>
+</div>
 
-      // If canvas exists, force renderer size too
-      if (sceneEl.renderer) {
-        sceneEl.renderer.setSize(window.innerWidth, window.innerHeight, false);
-      }
-      const canvas = sceneEl.canvas;
-      if (canvas) {
-        canvas.style.width = "100vw";
-        canvas.style.height = "100vh";
-      }
-      // Trigger layout
-      window.dispatchEvent(new Event("resize"));
+<script>
+  const startBtn = document.getElementById("startBtn");
+  const tapToStart = document.getElementById("tapToStart");
+  const statusEl = document.getElementById("status");
+
+  const sceneEl = document.querySelector("a-scene");
+  const videoEl = document.getElementById("workoutVideo");
+  const targetEl = document.getElementById("target0");
+
+  const setStatus = (msg) => statusEl.textContent = "Status: " + msg;
+
+  async function canFetch(url) {
+    try {
+      const res = await fetch(url, { method: "HEAD", cache: "no-store" });
+      return res.ok;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  targetEl.addEventListener("targetFound", async () => {
+    setStatus("target found ✅ playing video");
+    try { await videoEl.play(); } catch(e) { setStatus("target found, but video blocked"); }
+  });
+
+  targetEl.addEventListener("targetLost", () => {
+    setStatus("target lost ❌");
+    videoEl.pause();
+    videoEl.currentTime = 0;
+  });
+
+  async function startAR() {
+    if (!sceneEl.hasLoaded) {
+      await new Promise(resolve => sceneEl.addEventListener("loaded", resolve, { once:true }));
     }
 
-    window.addEventListener("resize", () => {
-      // small delay improves iOS stability
-      setTimeout(fixIOSHeight, 50);
-    });
+    // Preflight: make sure files are reachable
+    setStatus("checking files…");
+    const okMind = await canFetch("./targets.mind");
+    const okVid  = await canFetch("./video.mp4");
 
-    targetEl.addEventListener("targetFound", async () => {
-      setStatus("target found ✅ playing video");
-      try { await videoEl.play(); } catch (e) { setStatus("target found but video blocked"); }
-    });
-
-    targetEl.addEventListener("targetLost", () => {
-      setStatus("target lost ❌");
-      videoEl.pause();
-      videoEl.currentTime = 0;
-    });
-
-    async function startAR() {
-      // Wait A-Frame scene ready
-      if (!sceneEl.hasLoaded) {
-        await new Promise(resolve => sceneEl.addEventListener("loaded", resolve, { once: true }));
-      }
-
-      // Fix height before starting camera
-      fixIOSHeight();
-
-      // Unlock video on iOS with user gesture
-      try { await videoEl.play(); videoEl.pause(); videoEl.currentTime = 0; } catch (e) {}
-
-      try {
-        // MindAR system start (recommended)
-        const system = sceneEl.systems["mindar-image-system"];
-        await system.start();
-        setStatus("camera started ✅ now scan the card");
-
-        // Apply height fix again AFTER camera starts
-        setTimeout(fixIOSHeight, 100);
-        setTimeout(fixIOSHeight, 400);
-        setTimeout(fixIOSHeight, 900);
-      } catch (err) {
-        console.error(err);
-        setStatus("failed to start camera (permissions/https)");
-      }
+    if (!okMind) {
+      setStatus("❌ targets.mind NOT found (404/path/name wrong)");
+      return;
+    }
+    if (!okVid) {
+      setStatus("❌ video.mp4 NOT found (404/path/name wrong)");
+      return;
     }
 
-    startBtn.addEventListener("click", async () => {
-      tapToStart.style.display = "none";
-      setStatus("starting…");
-      await startAR();
-    });
+    // iOS: unlock video in a user gesture
+    try { await videoEl.play(); videoEl.pause(); videoEl.currentTime = 0; } catch(e) {}
 
-    // initial fix
-    fixIOSHeight();
-  </script>
+    // Start MindAR
+    setStatus("starting camera…");
+    try {
+      const system = sceneEl.systems["mindar-image-system"];
+      await system.start();
+      setStatus("camera started ✅ now scan the card");
+    } catch (err) {
+      console.error(err);
+      setStatus("❌ camera start failed (permission blocked?)");
+    }
+  }
+
+  startBtn.addEventListener("click", async () => {
+    tapToStart.style.display = "none";
+    await startAR();
+  });
+</script>
 </body>
 </html>
