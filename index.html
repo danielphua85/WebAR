@@ -1,0 +1,106 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AR Workout (MindAR Video)</title>
+
+    <!-- A-Frame + MindAR (Image Tracking) -->
+    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+
+    <style>
+      html, body { margin: 0; height: 100%; overflow: hidden; }
+      #tapToStart {
+        position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+        background: rgba(0,0,0,0.65); color: #fff; font-family: system-ui, -apple-system, sans-serif;
+        z-index: 9999; text-align: center; padding: 24px;
+      }
+      #tapToStart button {
+        font-size: 18px; padding: 12px 18px; border-radius: 12px; border: 0;
+      }
+      #hint {
+        position: fixed; left: 12px; bottom: 12px; z-index: 9999;
+        background: rgba(0,0,0,0.5); color: #fff; padding: 8px 10px; border-radius: 10px;
+        font-family: system-ui, -apple-system, sans-serif; font-size: 14px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- iPhone/Safari often requires a user tap before video can play -->
+    <div id="tapToStart">
+      <div>
+        <div style="font-size:20px; margin-bottom:12px;">AR Workout</div>
+        <div style="opacity:0.9; margin-bottom:16px;">Tap start, allow camera, then point at the workout card.</div>
+        <button id="startBtn">Start</button>
+      </div>
+    </div>
+    <div id="hint">Tip: Keep the card well-lit and steady.</div>
+
+    <a-scene
+      mindar-image="imageTargetSrc: targets.mind; autoStart: false;"
+      vr-mode-ui="enabled: false"
+      device-orientation-permission-ui="enabled: false"
+      renderer="colorManagement: true; physicallyCorrectLights: true;"
+    >
+      <a-assets>
+        <!-- playsinline + muted helps mobile autoplay after user gesture -->
+        <video
+          id="workoutVideo"
+          src="video.mp4"
+          preload="auto"
+          loop
+          muted
+          playsinline
+          webkit-playsinline
+          crossorigin="anonymous"
+        ></video>
+      </a-assets>
+
+      <!-- Camera -->
+      <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+
+      <!-- Target 0: show video on top of the image -->
+      <a-entity mindar-image-target="targetIndex: 0" id="target0">
+        <!-- a-video uses the <video> as a texture -->
+        <a-video
+          id="videoPlane"
+          src="#workoutVideo"
+          position="0 0 0"
+          rotation="0 0 0"
+          width="1.2"
+          height="0.675"
+        ></a-video>
+      </a-entity>
+    </a-scene>
+
+    <script>
+      const startBtn = document.getElementById("startBtn");
+      const tapToStart = document.getElementById("tapToStart");
+
+      const sceneEl = document.querySelector("a-scene");
+      const videoEl = document.getElementById("workoutVideo");
+      const targetEl = document.getElementById("target0");
+
+      // Play/pause video ONLY when target is found/lost
+      targetEl.addEventListener("targetFound", async () => {
+        try { await videoEl.play(); } catch (e) { /* ignore */ }
+      });
+      targetEl.addEventListener("targetLost", () => {
+        videoEl.pause();
+        videoEl.currentTime = 0; // optional: restart when found again
+      });
+
+      startBtn.addEventListener("click", async () => {
+        // 1) Start MindAR camera tracking
+        sceneEl.components["mindar-image"].start();
+
+        // 2) Try to “unlock” video playback on iOS with this user gesture
+        try { await videoEl.play(); videoEl.pause(); videoEl.currentTime = 0; } catch (e) {}
+
+        tapToStart.style.display = "none";
+      });
+    </script>
+  </body>
+</html>
